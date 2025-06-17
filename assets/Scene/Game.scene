@@ -22,7 +22,9 @@
     ],
     "_active": true,
     "_components": [],
-    "_prefab": null,
+    "_prefab": {
+      "__id__": 137
+    },
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
@@ -52,7 +54,7 @@
     },
     "autoReleaseAssets": false,
     "_globals": {
-      "__id__": 136
+      "__id__": 138
     },
     "_id": "4fa1e4d4-bdab-43fe-9abe-e6ed15cf9f68"
   },
@@ -109,6 +111,9 @@
       },
       {
         "__id__": 135
+      },
+      {
+        "__id__": 136
       }
     ],
     "_prefab": null,
@@ -2784,7 +2789,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "Deck",
+    "_name": "BoardSlot",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": {
@@ -5359,30 +5364,81 @@
     "_id": "c5V1EV8IpMtrIvY1OE9t2u"
   },
   {
+    "__type__": "179e1JoFdBJNowMxn+I9xF4",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 2
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "boardLevelNode": {
+      "__id__": 18
+    },
+    "boardLevelExtendNode": {
+      "__id__": 20
+    },
+    "boardRandomLeftNode": {
+      "__id__": 60
+    },
+    "boardRandomRightNode": {
+      "__id__": 62
+    },
+    "boardSlotNode": {
+      "__id__": 68
+    },
+    "boardHideNode": {
+      "__id__": 74
+    },
+    "blockPrefab": {
+      "__uuid__": "9fdcb627-23c4-4e06-97bf-ea5ac2218044",
+      "__expectedType__": "cc.Prefab"
+    },
+    "titleLabel": {
+      "__id__": 13
+    },
+    "gameOverNode": {
+      "__id__": 77
+    },
+    "gameCompleteNode": {
+      "__id__": 101
+    },
+    "_id": "a1fglLvYBJqJsW5Bxxa/Hw"
+  },
+  {
+    "__type__": "cc.PrefabInfo",
+    "root": null,
+    "asset": null,
+    "fileId": "4fa1e4d4-bdab-43fe-9abe-e6ed15cf9f68",
+    "instance": null,
+    "targetOverrides": null
+  },
+  {
     "__type__": "cc.SceneGlobals",
     "ambient": {
-      "__id__": 137
-    },
-    "shadows": {
-      "__id__": 138
-    },
-    "_skybox": {
       "__id__": 139
     },
-    "fog": {
+    "shadows": {
       "__id__": 140
     },
-    "octree": {
+    "_skybox": {
       "__id__": 141
     },
-    "skin": {
+    "fog": {
       "__id__": 142
     },
-    "lightProbeInfo": {
+    "octree": {
       "__id__": 143
     },
-    "postSettings": {
+    "skin": {
       "__id__": 144
+    },
+    "lightProbeInfo": {
+      "__id__": 145
+    },
+    "postSettings": {
+      "__id__": 146
     },
     "bakedWithStationaryMainLight": false,
     "bakedWithHighpLightmap": false
