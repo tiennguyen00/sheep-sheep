@@ -9,6 +9,7 @@ import {
 import { GAME_BOARD_ENUM, GAME_EVENT_ENUM } from "./Enum";
 import { BlockType } from "./type";
 import { CHANGE_BOARD } from "./Event";
+import { DataManager } from "./DataManager";
 const { ccclass, property } = _decorator;
 
 @ccclass("Block")
@@ -48,6 +49,8 @@ export class Block extends Component implements BlockType {
   init(block: BlockType) {
     Object.assign(this, block);
 
+    // Currently for testing, add to the `blocks` array in the `DataManager` instance
+    DataManager.instance.blocks.push(this);
     this.old_boardType = block.boardType;
     this.old_x = block.x;
     this.old_y = block.y;

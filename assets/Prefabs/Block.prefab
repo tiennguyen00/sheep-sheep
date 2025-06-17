@@ -358,7 +358,10 @@
     "__prefab": {
       "__id__": 17
     },
-    "spriteAtlas": null,
+    "spriteAtlas": {
+      "__uuid__": "d31d4ce7-1e48-4a97-be9e-6acd2772e757",
+      "__expectedType__": "cc.SpriteAtlas"
+    },
     "_id": ""
   },
   {
