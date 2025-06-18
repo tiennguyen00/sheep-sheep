@@ -6,9 +6,9 @@ import {
   SpriteAtlas,
   UITransform,
 } from "cc";
-import { GAME_BOARD_ENUM, GAME_EVENT_ENUM } from "./Enum";
+import { GAME_BOARD_ENUM, GAME_EVENT_ENUM, GAME_STATUS_ENUM } from "./Enum";
 import { BlockType } from "./type";
-import { CHANGE_BOARD } from "./Event";
+import { CHANGE_BOARD, CHECK_CLEAR } from "./Event";
 import { DataManager } from "./DataManager";
 const { ccclass, property } = _decorator;
 
@@ -59,6 +59,8 @@ export class Block extends Component implements BlockType {
     this.old_level = block.level;
     this.render();
   }
+
+  // this render func: update x, y, content size, priority, type, bg
   render() {
     this.node.setPosition(this.x, this.y);
     this.node.getComponent(UITransform).width = this.width;
@@ -83,7 +85,51 @@ export class Block extends Component implements BlockType {
         return false;
     }
   }
-  toSlot() {}
+  toSlot() {
+    console.log("toSlot: ", this);
+    // Get the lowerIds array of the current block
+    this.lowerIds.forEach((id) => {
+      let block: Block = DataManager.instance.blocks.find((i) => i.id === id);
+      if (block.higherIds.findIndex((i) => i === this.id) >= 0) {
+        //Remove the current block's id from the higherIds array
+        block.higherIds.splice(
+          block.higherIds.findIndex((i) => i === this.id),
+          1
+        );
+      }
+      block.render();
+    });
+    //
+    if (
+      DataManager.instance.records.findIndex((i) => i.id === this.id) === -1
+    ) {
+      DataManager.instance.records.push(this);
+    }
+
+    this.level = 0;
+    this.y = 0;
+    this.boardType = GAME_BOARD_ENUM.SLOT;
+    const slots_all = DataManager.instance.blocks.filter(
+      (i) => i.boardType == GAME_BOARD_ENUM.SLOT
+    );
+    const slots_same = DataManager.instance.blocks.filter(
+      (i) => i.boardType === GAME_BOARD_ENUM.SLOT && this.type == i.type
+    );
+    // This level use for the arrange the block in the Slot container
+    let maxLevel = 0;
+    slots_all.forEach((s) => {
+      if (s.level > maxLevel) {
+        maxLevel = s.level;
+      }
+    });
+
+    slots_same.forEach((i) => {
+      i.level = maxLevel + 1;
+      i.render();
+    });
+
+    CHECK_CLEAR.emit(GAME_EVENT_ENUM.CHECK_CLEAR, this);
+  }
   toSlotCancel() {}
   protected onLoad(): void {
     this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
@@ -92,7 +138,13 @@ export class Block extends Component implements BlockType {
   }
 
   onTouchStart(): void {
-    console.log("onTouchStart");
+    if (
+      DataManager.instance.gameStatus !== GAME_STATUS_ENUM.RUNNING ||
+      !this.clickable()
+    )
+      return;
+
+    this.toSlot();
   }
 
   onTouchEnd(): void {

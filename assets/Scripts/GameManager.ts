@@ -6,14 +6,17 @@ import {
   Label,
   Node,
   Prefab,
+  Animation,
 } from "cc";
 import {
   CHANGE_BOARD,
   CHECK_CLEAR,
   CHECK_COMPLETE,
   CHECK_LOSED,
+  PLAY_AUDIO,
 } from "./Event";
 import {
+  AUDIO_EFFECT_ENUM,
   GAME_BOARD_ENUM,
   GAME_EVENT_ENUM,
   GAME_SCENE_ENUM,
@@ -188,8 +191,6 @@ export class GameManager extends Component {
         blockNum = remainBlockNum;
       }
 
-      console.log("Blocknums " + i + ": ", blockNum);
-
       // If there's border shrinking and not the first layer
       if (currentLevel.blockBorderStep > 0 && i > 0) {
         // Shrink from one of 4 directions in a rotating pattern
@@ -265,13 +266,15 @@ export class GameManager extends Component {
         chessBox?.[nx]?.[ny]?.blocks?.push(block);
         blockPosSet.add(key);
 
-        // Stacking relationship
+        // Stacking relationship, 2: range to check whether its press down area
         const minX = Math.max(nx - 2, 0);
         const minY = Math.max(ny - 2, 0);
         const maxX = Math.min(nx + 2, maxWidth);
         const maxY = Math.min(ny + 2, maxHeight);
 
         let maxLevel = 0;
+        // console.log("current nx, ny: ", nx, ny);
+        // console.log("i & j: ", i, j, minX, maxX, minY, maxY);
         // Check surrounding blocks
         for (let i = minX; i <= maxX; i++) {
           for (let j = minY; j <= maxY; j++) {
@@ -284,15 +287,13 @@ export class GameManager extends Component {
 
               maxLevel = Math.max(maxLevel, topestBlock.level);
 
-              // Set the current block to know it's under another one
               block.lowerIds.push(topestBlock.id);
 
-              // Set the top block to know it's above this block
               topestBlock.higherIds.push(block.id);
             }
           }
         }
-
+        // level value will inscrease from frontward to backward (1 -> nearest screen, 2 -> farest screen)
         block.boardType = GAME_BOARD_ENUM.LEVEL;
         block.level = maxLevel + 1;
         block.x = nx * currentLevel.chessItemWidth;
@@ -309,8 +310,6 @@ export class GameManager extends Component {
       let node = instantiate(this.blockPrefab);
       node.getComponent(Block).init(b);
     });
-
-    console.log("chessBlocks:l ", chessBlocks);
 
     let x =
       ((currentLevel.chessItemWidth * currentLevel.chessWidthNum) / 2) * -1 +
@@ -344,7 +343,7 @@ export class GameManager extends Component {
 
   onChangeBoard(block: Block) {
     let board = this.boardLevelNode;
-    if (block.boardType === GAME_BOARD_ENUM.SLOT) board = this.boardHideNode;
+    if (block.boardType === GAME_BOARD_ENUM.SLOT) board = this.boardSlotNode;
     if (block.boardType === GAME_BOARD_ENUM.RANDOM_LEFT)
       board = this.boardRandomLeftNode;
     if (block.boardType === GAME_BOARD_ENUM.RANDOM_RIGHT)
@@ -355,11 +354,64 @@ export class GameManager extends Component {
     block.node.setParent(board);
   }
 
-  onCheckClear(block: Block) {}
+  onCheckClear(block: Block) {
+    let slot_blocks = DataManager.instance.blocks.filter(
+      (i) => i.boardType == GAME_BOARD_ENUM.SLOT
+    );
+    let target = slot_blocks.filter((i) => i.type === block.type);
+    console.log("target: ", target);
+    if (target.length >= DataManager.instance.currentLevel.clearableNum) {
+      DataManager.instance.gameStatus = GAME_STATUS_ENUM.CLEAR;
+      PLAY_AUDIO.emit(GAME_EVENT_ENUM.PLAY_AUDIO, AUDIO_EFFECT_ENUM.CLEAR);
 
-  onCheckLose(block: Block) {}
+      target.forEach((i) => {
+        const index = DataManager.instance.records.findIndex(
+          (i1) => i1.id === i.id
+        );
+        if (index >= 0) {
+          DataManager.instance.records.splice(index, 1);
+          let anim = i.node.getComponent(Animation);
 
-  onCheckComplete(block: Block) {}
+          anim.off(Animation.EventType.PLAY, this.onClearPlay, i);
+          anim.on(Animation.EventType.PLAY, this.onClearPlay, i);
+          anim.off(Animation.EventType.STOP, this.onClearStop, i);
+          anim.on(Animation.EventType.STOP, this.onClearStop, i);
+          anim.play();
+        }
+      });
+    } else {
+      // Check whether the slot_blocks fill over current Slot.
+      if (slot_blocks.length >= DataManager.instance.currentLevel.slotNum) {
+        CHECK_LOSED.emit(GAME_EVENT_ENUM.CHECK_LOSED, this);
+      }
+    }
+  }
+
+  onCheckLose(block: Block) {
+    console.log("lose");
+  }
+  onClearPlay() {
+    this.node.getChildByName("bg").active = false;
+  }
+  onClearStop() {
+    this.node.getChildByName("bg").active = true; // Set the background active
+
+    this.node.getComponent(Block).boardType = GAME_BOARD_ENUM.HIDE; // Set the board type to hide
+
+    let unHide_blocks = DataManager.instance.blocks.filter(
+      (item) => item.boardType != GAME_BOARD_ENUM.HIDE
+    ); // Filter out the hide blocks
+
+    if (unHide_blocks.length <= 0) {
+      CHECK_COMPLETE.emit(GAME_EVENT_ENUM.CHECK_COMPLETE, this); // Emit the event to check if the game is complete
+    } else {
+      DataManager.instance.gameStatus = GAME_STATUS_ENUM.RUNNING;
+    }
+  }
+
+  onCheckComplete() {
+    console.log("complete: ");
+  }
 
   protected onDestroy(): void {
     CHANGE_BOARD.off(GAME_EVENT_ENUM.CHANGE_BOARD, this.onChangeBoard, this);
