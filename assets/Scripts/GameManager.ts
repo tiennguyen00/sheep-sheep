@@ -23,6 +23,7 @@ import { Block } from "./Block";
 import { DataManager } from "./DataManager";
 import { levels } from "./Level";
 import { BlockType } from "./type";
+import { shuffle } from "./Utils";
 const { ccclass, property } = _decorator;
 
 @ccclass("GameManager")
@@ -76,27 +77,6 @@ export class GameManager extends Component {
     DataManager.instance.gameStatus = GAME_STATUS_ENUM.RUNNING;
   }
 
-  onGameReset() {}
-
-  onGameExtend() {}
-
-  onGameUndo() {}
-  onGameShuffle() {}
-  onClickable() {}
-  onGameNext() {}
-  onBackMenu() {}
-  initChessBox(width: number, height: number) {
-    let box = new Array(width);
-    for (let i = 0; i < width; i++) {
-      box[i] = new Array(height);
-      for (let j = 0; j < height; j++) {
-        box[i][j] = {
-          blocks: [],
-        };
-      }
-    }
-    return box;
-  }
   initGame(num: number) {
     let currentLevel = levels[num - 1];
     if (!currentLevel) {
@@ -120,14 +100,15 @@ export class GameManager extends Component {
     if (totalBlockNum % blockUnit !== 0)
       totalBlockNum = Math.floor(totalBlockNum / blockUnit + 1) * blockUnit;
 
-    const typeArr = [];
+    let typeArr = [];
     const contentTarget = currentLevel.blockTypeArr.slice(
       0,
       currentLevel.blockTypeNum
     );
     for (let i = 0; i < totalBlockNum; i++) {
-      typeArr.push(contentTarget[i % contentTarget.length]);
+      typeArr.push(contentTarget[i % currentLevel.blockTypeNum]);
     }
+    typeArr = shuffle(typeArr);
 
     const blockArr: BlockType[] = [];
     for (let i = 0; i < totalBlockNum; i++) {
@@ -167,7 +148,7 @@ export class GameManager extends Component {
     if (
       currentLevel.leftRandomBlocks == 0 &&
       currentLevel.rightRandomBlocks == 0 &&
-      currentLevel.levelBlockNum % currentLevel.clearableNum &&
+      currentLevel.levelBlockNum % currentLevel.clearableNum == 0 &&
       (currentLevel.levelNum * currentLevel.levelBlockNum) %
         (currentLevel.clearableNum * currentLevel.blockTypeNum) ==
         0 &&
@@ -207,6 +188,8 @@ export class GameManager extends Component {
         blockNum = remainBlockNum;
       }
 
+      console.log("Blocknums " + i + ": ", blockNum);
+
       // If there's border shrinking and not the first layer
       if (currentLevel.blockBorderStep > 0 && i > 0) {
         // Shrink from one of 4 directions in a rotating pattern
@@ -214,13 +197,13 @@ export class GameManager extends Component {
           case 0: // shrink from left, 4, 8
             minWidth += currentLevel.blockBorderStep;
             break;
-          case 1: // shrink from right, 1, 5, 9
+          case 3: // shrink from right, 1, 5, 9
             maxWidth -= currentLevel.blockBorderStep;
             break;
           case 2: // shrink from top, 2, 6, 10
             minHeight += currentLevel.blockBorderStep;
             break;
-          case 3: // shrink from bottom, 3, 7, 11
+          case 1: // shrink from bottom, 3, 7, 11
             maxHeight -= currentLevel.blockBorderStep;
             break;
         }
@@ -257,70 +240,68 @@ export class GameManager extends Component {
               key = `${nx}_${ny}`;
               if (!blockPosSet.has(key)) break;
             }
-          } else {
-            // When isRandom is false, use levelBlockNum to calculate a square root size
-            let sqrt = Math.floor(Math.sqrt(currentLevel.levelBlockNum));
-
-            // Take the square root of levelBlockNum to get how many blocks per row
-            // * 4 means each block is spaced by 4 units
-            // Math.floor((chessWidthNum - 3 * sqrt) / 2): calculates the left offset for centering
-            nx =
-              (j % sqrt) * 4 +
-              Math.floor((currentLevel.chessWidthNum - 3 * sqrt) / 2);
-
-            // If sqrt is even, subtract 1 to fine-tune alignment
-            if (sqrt % 2 === 0) nx -= 1;
-
-            // Compute ny based on index j and sqrt
-            ny = Math.floor(j / sqrt) * 5 + i;
-
-            // Create position key string
-            key = `${nx}_${ny}`;
           }
-          chessBox?.[nx]?.[ny]?.blocks?.push(block);
-          blockPosSet.add(key);
+        } else {
+          // When isRandom is false, use levelBlockNum to calculate a square root size
+          let sqrt = Math.floor(Math.sqrt(currentLevel.levelBlockNum));
 
-          // Stacking relationship
-          const minX = Math.max(nx - 2, 0);
-          const minY = Math.max(ny - 2, 0);
-          const maxX = Math.min(nx + 2, maxWidth);
-          const maxY = Math.min(ny + 2, maxHeight);
+          // Take the square root of levelBlockNum to get how many blocks per row
+          // * 4 means each block is spaced by 4 units
+          // Math.floor((chessWidthNum - 3 * sqrt) / 2): calculates the left offset for centering
+          nx =
+            (j % sqrt) * 4 +
+            Math.floor((currentLevel.chessWidthNum - 3 * sqrt) / 2);
 
-          let maxLevel = 0;
-          // Check surrounding blocks
-          for (let i = minX; i <= maxX; i++) {
-            for (let j = minY; j <= maxY; j++) {
-              let nearbyBlocks = chessBox[i][j].blocks;
+          // If sqrt is even, subtract 1 to fine-tune alignment
+          if (sqrt % 2 === 0) nx -= 1;
 
-              // If there are blocks stacked at that position
-              if (nearbyBlocks.length > 0) {
-                let topestBlock = nearbyBlocks[nearbyBlocks.length - 1];
-                if (topestBlock.id === block.id) continue;
+          // Compute ny based on index j and sqrt
+          ny = Math.floor(j / sqrt) * 5 + i;
 
-                maxLevel = Math.max(maxLevel, topestBlock.level);
+          // Create position key string
+          key = `${nx}_${ny}`;
+        }
 
-                // Set the current block to know it's under another one
-                block.lowerIds.push(topestBlock.id);
+        chessBox?.[nx]?.[ny]?.blocks?.push(block);
+        blockPosSet.add(key);
 
-                // Set the top block to know it's above this block
-                topestBlock.higherIds.push(block.id);
-              }
+        // Stacking relationship
+        const minX = Math.max(nx - 2, 0);
+        const minY = Math.max(ny - 2, 0);
+        const maxX = Math.min(nx + 2, maxWidth);
+        const maxY = Math.min(ny + 2, maxHeight);
+
+        let maxLevel = 0;
+        // Check surrounding blocks
+        for (let i = minX; i <= maxX; i++) {
+          for (let j = minY; j <= maxY; j++) {
+            let nearbyBlocks = chessBox[i][j].blocks;
+
+            // If there are blocks stacked at that position
+            if (nearbyBlocks.length > 0) {
+              let topestBlock = nearbyBlocks[nearbyBlocks.length - 1];
+              if (topestBlock.id === block.id) continue;
+
+              maxLevel = Math.max(maxLevel, topestBlock.level);
+
+              // Set the current block to know it's under another one
+              block.lowerIds.push(topestBlock.id);
+
+              // Set the top block to know it's above this block
+              topestBlock.higherIds.push(block.id);
             }
           }
-
-          block.boardType = GAME_BOARD_ENUM.LEVEL;
-          block.level = maxLevel + 1;
-          block.x = nx * currentLevel.chessItemWidth;
-          block.y = ny * currentLevel.chessItemHeight;
         }
+
+        block.boardType = GAME_BOARD_ENUM.LEVEL;
+        block.level = maxLevel + 1;
+        block.x = nx * currentLevel.chessItemWidth;
+        block.y = ny * currentLevel.chessItemHeight;
       }
 
       chessBlocks.push(...blocks);
-      console.log("chessBlocks: ", chessBlocks);
-
-      // Save progress
+      // console.log("chessBlocks: ", chessBlocks);
       remainBlockNum -= blockNum;
-      // Stop if all blocks are placed
       if (remainBlockNum <= 0) break;
     }
 
@@ -328,9 +309,51 @@ export class GameManager extends Component {
       let node = instantiate(this.blockPrefab);
       node.getComponent(Block).init(b);
     });
+
+    console.log("chessBlocks:l ", chessBlocks);
+
+    let x =
+      ((currentLevel.chessItemWidth * currentLevel.chessWidthNum) / 2) * -1 +
+      currentLevel.chessWidthNum;
+    let y =
+      (currentLevel.chessItemHeight * currentLevel.chessHeightNum) / 2 - 300;
+    this.boardLevelNode.setPosition(x, y);
   }
 
-  onChangeBoard(block: Block) {}
+  onGameReset() {}
+
+  onGameExtend() {}
+
+  onGameUndo() {}
+  onGameShuffle() {}
+  onClickable() {}
+  onGameNext() {}
+  onBackMenu() {}
+  initChessBox(width: number, height: number) {
+    let box = new Array(width);
+    for (let i = 0; i < width; i++) {
+      box[i] = new Array(height);
+      for (let j = 0; j < height; j++) {
+        box[i][j] = {
+          blocks: [],
+        };
+      }
+    }
+    return box;
+  }
+
+  onChangeBoard(block: Block) {
+    let board = this.boardLevelNode;
+    if (block.boardType === GAME_BOARD_ENUM.SLOT) board = this.boardHideNode;
+    if (block.boardType === GAME_BOARD_ENUM.RANDOM_LEFT)
+      board = this.boardRandomLeftNode;
+    if (block.boardType === GAME_BOARD_ENUM.RANDOM_RIGHT)
+      board = this.boardRandomRightNode;
+    if (block.boardType === GAME_BOARD_ENUM.LEVEL_EXTEND)
+      board = this.boardLevelExtendNode;
+    if (block.boardType === GAME_BOARD_ENUM.HIDE) board = this.boardHideNode;
+    block.node.setParent(board);
+  }
 
   onCheckClear(block: Block) {}
 

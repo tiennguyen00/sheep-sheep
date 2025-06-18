@@ -7,18 +7,18 @@ const { ccclass, property } = _decorator;
 @ccclass("DataManager")
 export class DataManager extends Component {
   private static _instance: DataManager = null;
-  static getInstance(): DataManager {
-    if (!DataManager._instance) {
-      DataManager._instance = new DataManager();
+  static getInstance<T>(): T {
+    if (this._instance === null) {
+      this._instance = new this();
     }
-    return DataManager._instance;
+    return this._instance as any;
   }
 
   static get instance() {
-    return DataManager.getInstance();
+    return this.getInstance<DataManager>();
   }
 
-  private _level: number = 0;
+  private _level: number = 1;
   blocks: Block[] = [];
   records: Block[] = [];
   currentLevel: LevelType = null;
@@ -35,7 +35,6 @@ export class DataManager extends Component {
   }
 
   reset() {
-    this._level = 0;
     this.blocks = [];
     this.records = [];
     this.currentLevel = null;

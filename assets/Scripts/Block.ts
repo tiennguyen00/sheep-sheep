@@ -63,13 +63,25 @@ export class Block extends Component implements BlockType {
     this.node.setPosition(this.x, this.y);
     this.node.getComponent(UITransform).width = this.width;
     this.node.getComponent(UITransform).height = this.height;
-    this.node.setSiblingIndex(this.level);
+    this.node.getComponent(UITransform).priority = this.level;
+    // this.node.setSiblingIndex(this.level);
     this.node.getComponent(Sprite).spriteFrame =
       this.spriteAtlas.getSpriteFrames()[this.type];
     this.node.getChildByName("bg").active = !this.clickable();
   }
   clickable() {
-    return null;
+    switch (this.boardType) {
+      case GAME_BOARD_ENUM.LEVEL:
+        if (DataManager.instance.clickable) return true;
+        return this.higherIds.length <= 0;
+      case GAME_BOARD_ENUM.RANDOM_LEFT:
+      case GAME_BOARD_ENUM.RANDOM_RIGHT:
+        return this.higherIds.length <= 0;
+      case GAME_BOARD_ENUM.LEVEL_EXTEND:
+        return true;
+      default:
+        return false;
+    }
   }
   toSlot() {}
   toSlotCancel() {}

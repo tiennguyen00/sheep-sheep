@@ -26,7 +26,7 @@ export const levels: LevelType[] = [
     // How many blocks are in each layer.
     levelBlockNum: 9,
     // Number of different block types
-    blockTypeNum: 5,
+    blockTypeNum: 3,
     // Increment step for the border between layers
     blockBorderStep: 1,
     // List of block types used in this level
