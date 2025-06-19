@@ -75,7 +75,17 @@ export class GameManager extends Component {
   }
 
   gameStart() {
-    DataManager.instance.restore();
+    // Clear the node after restart
+    // Remove all children from all board nodes to clear the scene
+    this.boardLevelNode.removeAllChildren();
+    this.boardLevelExtendNode.removeAllChildren();
+    this.boardRandomLeftNode.removeAllChildren();
+    this.boardRandomRightNode.removeAllChildren();
+    this.boardSlotNode.removeAllChildren();
+    this.boardHideNode.removeAllChildren();
+
+    DataManager.instance.reset();
+    DataManager.instance.level = 0;
     this.initGame(DataManager.instance.level);
     DataManager.instance.gameStatus = GAME_STATUS_ENUM.RUNNING;
   }
@@ -244,7 +254,7 @@ export class GameManager extends Component {
           }
         } else {
           // When isRandom is false, use levelBlockNum to calculate a square root size
-          let sqrt = Math.floor(Math.sqrt(currentLevel.levelBlockNum));
+          let sqrt = Math.ceil(Math.sqrt(currentLevel.levelBlockNum));
 
           // Take the square root of levelBlockNum to get how many blocks per row
           // * 4 means each block is spaced by 4 units
@@ -267,10 +277,11 @@ export class GameManager extends Component {
         blockPosSet.add(key);
 
         // Stacking relationship, 2: range to check whether its press down area
-        const minX = Math.max(nx - 2, 0);
-        const minY = Math.max(ny - 2, 0);
-        const maxX = Math.min(nx + 2, maxWidth);
-        const maxY = Math.min(ny + 2, maxHeight);
+        const range = 2;
+        const minX = Math.max(nx - range, 0);
+        const minY = Math.max(ny - range, 0);
+        const maxX = Math.min(nx + range, maxWidth);
+        const maxY = Math.min(ny + range, maxHeight);
 
         let maxLevel = 0;
         // console.log("current nx, ny: ", nx, ny);
@@ -282,6 +293,7 @@ export class GameManager extends Component {
 
             // If there are blocks stacked at that position
             if (nearbyBlocks.length > 0) {
+              // console.log("nearbyBlocks:", nearbyBlocks);
               let topestBlock = nearbyBlocks[nearbyBlocks.length - 1];
               if (topestBlock.id === block.id) continue;
 
@@ -293,7 +305,7 @@ export class GameManager extends Component {
             }
           }
         }
-        // level value will inscrease from frontward to backward (1 -> nearest screen, 2 -> farest screen)
+        // level value will inscrease from frontward to backward (1 -> nearest screen, 3 -> farest screen)
         block.boardType = GAME_BOARD_ENUM.LEVEL;
         block.level = maxLevel + 1;
         block.x = nx * currentLevel.chessItemWidth;
@@ -310,23 +322,33 @@ export class GameManager extends Component {
       let node = instantiate(this.blockPrefab);
       node.getComponent(Block).init(b);
     });
-
     let x =
       ((currentLevel.chessItemWidth * currentLevel.chessWidthNum) / 2) * -1 +
       currentLevel.chessWidthNum;
     let y =
-      (currentLevel.chessItemHeight * currentLevel.chessHeightNum) / 2 - 300;
+      ((currentLevel.chessItemHeight * currentLevel.chessHeightNum) / 2) * -1 +
+      60;
     this.boardLevelNode.setPosition(x, y);
   }
 
-  onGameReset() {}
+  onGameRestart() {
+    this.gameOverNode.active = false;
+    this.gameStart();
+  }
 
   onGameExtend() {}
 
   onGameUndo() {}
   onGameShuffle() {}
   onClickable() {}
-  onGameNext() {}
+  onGameNext() {
+    this.gameCompleteNode.active = false;
+
+    DataManager.instance.reset();
+    DataManager.instance.level += 1;
+    this.initGame(DataManager.instance.level);
+    DataManager.instance.gameStatus = GAME_STATUS_ENUM.RUNNING;
+  }
   onBackMenu() {}
   initChessBox(width: number, height: number) {
     let box = new Array(width);
@@ -343,7 +365,9 @@ export class GameManager extends Component {
 
   onChangeBoard(block: Block) {
     let board = this.boardLevelNode;
-    if (block.boardType === GAME_BOARD_ENUM.SLOT) board = this.boardSlotNode;
+    if (block.boardType === GAME_BOARD_ENUM.SLOT) {
+      board = this.boardSlotNode;
+    }
     if (block.boardType === GAME_BOARD_ENUM.RANDOM_LEFT)
       board = this.boardRandomLeftNode;
     if (block.boardType === GAME_BOARD_ENUM.RANDOM_RIGHT)
@@ -359,7 +383,6 @@ export class GameManager extends Component {
       (i) => i.boardType == GAME_BOARD_ENUM.SLOT
     );
     let target = slot_blocks.filter((i) => i.type === block.type);
-    console.log("target: ", target);
     if (target.length >= DataManager.instance.currentLevel.clearableNum) {
       DataManager.instance.gameStatus = GAME_STATUS_ENUM.CLEAR;
       PLAY_AUDIO.emit(GAME_EVENT_ENUM.PLAY_AUDIO, AUDIO_EFFECT_ENUM.CLEAR);
@@ -387,8 +410,9 @@ export class GameManager extends Component {
     }
   }
 
-  onCheckLose(block: Block) {
-    console.log("lose");
+  onCheckLose() {
+    this.gameOverNode.active = true;
+    PLAY_AUDIO.emit(GAME_EVENT_ENUM.PLAY_AUDIO, AUDIO_EFFECT_ENUM.LOSE);
   }
   onClearPlay() {
     this.node.getChildByName("bg").active = false;
@@ -410,7 +434,8 @@ export class GameManager extends Component {
   }
 
   onCheckComplete() {
-    console.log("complete: ");
+    this.gameCompleteNode.active = true;
+    PLAY_AUDIO.emit(GAME_EVENT_ENUM.PLAY_AUDIO, AUDIO_EFFECT_ENUM.WIN);
   }
 
   protected onDestroy(): void {

@@ -6,10 +6,11 @@ export const levels: LevelType[] = [
     chessWidthNum is used to define the number of columns in the chessboard.
     chessItemWidth is used to determine the actual pixel width of each grid cell, affecting visual size.
   */
+
   {
     // Set grid (each Block occupies one grid cell) — logical dimensions
     chessWidthNum: 20,
-    chessHeightNum: 20,
+    chessHeightNum: 14,
     // Single item (visual size) — actual pixel size
     chessItemWidth: 22,
     chessItemHeight: 22,
@@ -30,6 +31,36 @@ export const levels: LevelType[] = [
     // Increment step for the border between layers
     blockBorderStep: 1,
     // List of block types used in this level
+    blockTypeArr: cards,
+  },
+  {
+    chessWidthNum: 20,
+    chessHeightNum: 20,
+    chessItemHeight: 22,
+    chessItemWidth: 22,
+    slotNum: 7,
+    clearableNum: 3,
+    leftRandomBlocks: 0,
+    rightRandomBlocks: 0,
+    levelNum: 4,
+    levelBlockNum: 15,
+    blockTypeNum: 5,
+    blockBorderStep: 1,
+    blockTypeArr: cards,
+  },
+  {
+    chessWidthNum: 20,
+    chessHeightNum: 20,
+    chessItemHeight: 22,
+    chessItemWidth: 22,
+    slotNum: 7,
+    clearableNum: 3,
+    leftRandomBlocks: 0,
+    rightRandomBlocks: 0,
+    levelNum: 7,
+    levelBlockNum: 16,
+    blockTypeNum: 6,
+    blockBorderStep: 1,
     blockTypeArr: cards,
   },
 ];

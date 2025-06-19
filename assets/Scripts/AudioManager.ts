@@ -60,6 +60,7 @@ export class AudioManager extends Component {
     }
 
     if (this.audioSource.clip) {
+      this.audioSource.volume = 0.6;
       this.audioSource.play();
     }
   }
@@ -71,6 +72,16 @@ export class AudioManager extends Component {
         break;
       case AUDIO_EFFECT_ENUM.CLEAR:
         this.audioSource.playOneShot(this.clear);
+        break;
+      case AUDIO_EFFECT_ENUM.CLICKBLOCK:
+        this.audioSource.playOneShot(this.clickBlock);
+        break;
+      case AUDIO_EFFECT_ENUM.WIN:
+        this.audioSource.playOneShot(this.win);
+        break;
+      case AUDIO_EFFECT_ENUM.LOSE:
+        this.audioSource.playOneShot(this.lose);
+        break;
     }
   }
 

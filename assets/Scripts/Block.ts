@@ -1,14 +1,23 @@
 import {
   _decorator,
   Component,
+  find,
   Node,
   Sprite,
   SpriteAtlas,
+  tween,
   UITransform,
+  Vec2,
+  Vec3,
 } from "cc";
-import { GAME_BOARD_ENUM, GAME_EVENT_ENUM, GAME_STATUS_ENUM } from "./Enum";
+import {
+  AUDIO_EFFECT_ENUM,
+  GAME_BOARD_ENUM,
+  GAME_EVENT_ENUM,
+  GAME_STATUS_ENUM,
+} from "./Enum";
 import { BlockType } from "./type";
-import { CHANGE_BOARD, CHECK_CLEAR } from "./Event";
+import { CHANGE_BOARD, CHECK_CLEAR, PLAY_AUDIO } from "./Event";
 import { DataManager } from "./DataManager";
 const { ccclass, property } = _decorator;
 
@@ -34,6 +43,9 @@ export class Block extends Component implements BlockType {
   old_width: number;
   old_height: number;
   old_level: number;
+
+  // For debugging
+  public slotNode: Node = null;
 
   get boardType() {
     return this._boardType;
@@ -63,6 +75,14 @@ export class Block extends Component implements BlockType {
   // this render func: update x, y, content size, priority, type, bg
   render() {
     this.node.setPosition(this.x, this.y);
+    // tween(this.node)
+    //   .to(
+    //     0.5,
+    //     { position: new Vec3(this.x, this.y, 0) },
+    //     { easing: "sineInOut" }
+    //   )
+    //   .start();
+
     this.node.getComponent(UITransform).width = this.width;
     this.node.getComponent(UITransform).height = this.height;
     this.node.getComponent(UITransform).priority = this.level;
@@ -86,8 +106,9 @@ export class Block extends Component implements BlockType {
     }
   }
   toSlot() {
-    console.log("toSlot: ", this);
+    // console.log("toSlot: ", this);
     // Get the lowerIds array of the current block
+
     this.lowerIds.forEach((id) => {
       let block: Block = DataManager.instance.blocks.find((i) => i.id === id);
       if (block.higherIds.findIndex((i) => i === this.id) >= 0) {
@@ -128,10 +149,12 @@ export class Block extends Component implements BlockType {
       i.render();
     });
 
+    PLAY_AUDIO.emit(GAME_EVENT_ENUM.PLAY_AUDIO, AUDIO_EFFECT_ENUM.CLICKBUTTON);
     CHECK_CLEAR.emit(GAME_EVENT_ENUM.CHECK_CLEAR, this);
   }
   toSlotCancel() {}
   protected onLoad(): void {
+    this.slotNode = find("Canvas/BoardSlot");
     this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
     this.node.on(Node.EventType.TOUCH_END, this.onTouchEnd, this);
     this.node.on(Node.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
@@ -147,13 +170,9 @@ export class Block extends Component implements BlockType {
     this.toSlot();
   }
 
-  onTouchEnd(): void {
-    console.log("onTouchEnd");
-  }
+  onTouchEnd(): void {}
 
-  onTouchCancel(): void {
-    console.log("onTouchCancel");
-  }
+  onTouchCancel(): void {}
 
   protected onDestroy(): void {
     this.node.off(Node.EventType.TOUCH_START, this.onTouchStart, this);
