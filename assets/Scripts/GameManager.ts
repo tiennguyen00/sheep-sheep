@@ -7,6 +7,7 @@ import {
   Node,
   Prefab,
   Animation,
+  find,
 } from "cc";
 import {
   CHANGE_BOARD,
@@ -61,6 +62,10 @@ export class GameManager extends Component {
   @property(Node)
   gameCompleteNode: Node = null;
 
+  private shuffleLeft = 1;
+  private undoLeft = 1;
+  private extendLeft = 1;
+
   protected onLoad(): void {
     director.preloadScene(GAME_SCENE_ENUM.MENU);
     CHANGE_BOARD.on(GAME_EVENT_ENUM.CHANGE_BOARD, this.onChangeBoard, this);
@@ -76,6 +81,8 @@ export class GameManager extends Component {
 
   gameStart() {
     // Clear the node after restart
+    find("Canvas/BoardSkill/Undo").active = true;
+    find("Canvas/BoardSkill/Suffle").active = true;
     // Remove all children from all board nodes to clear the scene
     this.boardLevelNode.removeAllChildren();
     this.boardLevelExtendNode.removeAllChildren();
@@ -336,13 +343,69 @@ export class GameManager extends Component {
     this.gameStart();
   }
 
-  onGameExtend() {}
+  onGameExtend() {
+    //Remove three bricksand set them aside
+    console.log("extend");
+  }
+  onGameUndo() {
+    if (DataManager.instance.records.length === 0) {
+      return;
+    }
+    const block = DataManager.instance.records.pop();
+    if (!block) return;
 
-  onGameUndo() {}
-  onGameShuffle() {}
+    block.boardType = block.old_boardType;
+    block.x = block.old_x;
+    block.y = block.old_y;
+    block.width = block.old_width;
+    block.height = block.old_height;
+    block.level = block.old_level;
+    block.lowerIds = [...block.old_lowerIds];
+
+    block.lowerIds.forEach((i) => {
+      const item = DataManager.instance.blocks.find((item) => item.id === i);
+      if (item.higherIds.findIndex((j) => j === block.id) === -1) {
+        item.higherIds.push(block.id);
+        item.render();
+      }
+    });
+
+    this.onChangeBoard(block);
+    block.render();
+
+    if (--this.undoLeft <= 0) {
+      const undoNode = find("Canvas/BoardSkill/Undo");
+      if (undoNode) undoNode.active = false;
+    }
+  }
+  onGameShuffle() {
+    const levels_all: Block[] = [];
+
+    DataManager.instance.blocks.forEach((block) => {
+      if (block.boardType === GAME_BOARD_ENUM.LEVEL) levels_all.push(block);
+    });
+
+    for (let i = levels_all.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [levels_all[i].type, levels_all[j].type] = [
+        levels_all[j].type,
+        levels_all[i].type,
+      ];
+    }
+    levels_all.forEach((block) => block.render());
+    if (--this.shuffleLeft <= 0) {
+      const shuffleNode = find("Canvas/BoardSkill/Suffle");
+      shuffleNode.active = false;
+    }
+  }
+
   onClickable() {}
+
   onGameNext() {
     this.gameCompleteNode.active = false;
+
+    find("Canvas/BoardSkill/Undo").active = true;
+    find("Canvas/BoardSkill/Suffle").active = true;
 
     DataManager.instance.reset();
     DataManager.instance.level += 1;
@@ -435,6 +498,7 @@ export class GameManager extends Component {
 
   onCheckComplete() {
     this.gameCompleteNode.active = true;
+
     PLAY_AUDIO.emit(GAME_EVENT_ENUM.PLAY_AUDIO, AUDIO_EFFECT_ENUM.WIN);
   }
 

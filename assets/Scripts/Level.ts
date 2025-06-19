@@ -59,7 +59,7 @@ export const levels: LevelType[] = [
     rightRandomBlocks: 0,
     levelNum: 7,
     levelBlockNum: 16,
-    blockTypeNum: 6,
+    blockTypeNum: 10,
     blockBorderStep: 1,
     blockTypeArr: cards,
   },

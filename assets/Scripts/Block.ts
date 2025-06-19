@@ -43,9 +43,7 @@ export class Block extends Component implements BlockType {
   old_width: number;
   old_height: number;
   old_level: number;
-
-  // For debugging
-  public slotNode: Node = null;
+  old_lowerIds: number[];
 
   get boardType() {
     return this._boardType;
@@ -69,6 +67,7 @@ export class Block extends Component implements BlockType {
     this.old_width = block.width;
     this.old_height = block.height;
     this.old_level = block.level;
+    this.old_lowerIds = block.lowerIds;
     this.render();
   }
 
@@ -106,11 +105,11 @@ export class Block extends Component implements BlockType {
     }
   }
   toSlot() {
-    // console.log("toSlot: ", this);
     // Get the lowerIds array of the current block
 
     this.lowerIds.forEach((id) => {
       let block: Block = DataManager.instance.blocks.find((i) => i.id === id);
+
       if (block.higherIds.findIndex((i) => i === this.id) >= 0) {
         //Remove the current block's id from the higherIds array
         block.higherIds.splice(
@@ -120,6 +119,7 @@ export class Block extends Component implements BlockType {
       }
       block.render();
     });
+    this.lowerIds = [];
     //
     if (
       DataManager.instance.records.findIndex((i) => i.id === this.id) === -1
@@ -154,7 +154,6 @@ export class Block extends Component implements BlockType {
   }
   toSlotCancel() {}
   protected onLoad(): void {
-    this.slotNode = find("Canvas/BoardSlot");
     this.node.on(Node.EventType.TOUCH_START, this.onTouchStart, this);
     this.node.on(Node.EventType.TOUCH_END, this.onTouchEnd, this);
     this.node.on(Node.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
