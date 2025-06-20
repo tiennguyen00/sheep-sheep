@@ -2,7 +2,7 @@ import { _decorator, Component, Node } from "cc";
 import { Block } from "./Block";
 import { LevelType } from "./type";
 import { GAME_STATUS_ENUM } from "./Enum";
-const { ccclass, property } = _decorator;
+const { ccclass } = _decorator;
 
 @ccclass("DataManager")
 export class DataManager extends Component {

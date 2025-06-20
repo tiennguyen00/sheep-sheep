@@ -83,6 +83,7 @@ export class GameManager extends Component {
     // Clear the node after restart
     find("Canvas/BoardSkill/Undo").active = true;
     find("Canvas/BoardSkill/Suffle").active = true;
+    find("Canvas/BoardSkill/Extend").active = true;
     // Remove all children from all board nodes to clear the scene
     this.boardLevelNode.removeAllChildren();
     this.boardLevelExtendNode.removeAllChildren();
@@ -344,8 +345,28 @@ export class GameManager extends Component {
   }
 
   onGameExtend() {
-    //Remove three bricksand set them aside
-    console.log("extend");
+    // Remove three bricksand set them aside
+    // Check current bricks in Slot
+    const slots_all = DataManager.instance.blocks.filter(
+      (i) => i.boardType === GAME_BOARD_ENUM.SLOT
+    );
+    if (slots_all.length > 0) {
+      slots_all
+        .slice(0, DataManager.instance.currentLevel.clearableNum)
+        .forEach((i) => {
+          i.boardType = GAME_BOARD_ENUM.LEVEL_EXTEND;
+          i.y = 0;
+          i.render();
+          this.onChangeBoard(i);
+        });
+    } else {
+      return;
+    }
+
+    if (--this.extendLeft <= 0) {
+      const extendNode = find("Canvas/BoardSkill/Extend");
+      if (extendNode) extendNode.active = false;
+    }
   }
   onGameUndo() {
     if (DataManager.instance.records.length === 0) {
@@ -403,9 +424,6 @@ export class GameManager extends Component {
 
   onGameNext() {
     this.gameCompleteNode.active = false;
-
-    find("Canvas/BoardSkill/Undo").active = true;
-    find("Canvas/BoardSkill/Suffle").active = true;
 
     DataManager.instance.reset();
     DataManager.instance.level += 1;

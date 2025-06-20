@@ -1,4 +1,4 @@
-import { _decorator, Component, director, Node } from "cc";
+import { _decorator, Component, director, find, Node } from "cc";
 import { AUDIO_EFFECT_ENUM, GAME_EVENT_ENUM, GAME_SCENE_ENUM } from "./Enum";
 import { PLAY_AUDIO } from "./Event";
 const { ccclass, property } = _decorator;
@@ -12,6 +12,10 @@ export class MenuManager extends Component {
   onGameStart() {
     PLAY_AUDIO.emit(GAME_EVENT_ENUM.PLAY_AUDIO, AUDIO_EFFECT_ENUM.CLICKBUTTON);
     director.loadScene(GAME_SCENE_ENUM.GAME);
+  }
+
+  onCloseInstruction() {
+    find("Canvas/Instruction").destroy();
   }
 
   start() {}
