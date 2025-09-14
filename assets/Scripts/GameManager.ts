@@ -99,6 +99,14 @@ export class GameManager extends Component {
   }
 
   initGame(num: number) {
+    //Trying to change the text in the GameComplete
+    const block = this.gameCompleteNode.getChildByName("block");
+    block.getChildByName("Label").getComponent(Label).string =
+      "Level Completed";
+    const nextBtn = block.getChildByName("Next");
+    nextBtn.getChildByName("Label").getComponent(Label).string = "Next";
+    // ===========================================================
+
     let currentLevel = levels[num - 1];
     if (!currentLevel) {
       if (levels[0]) {
@@ -515,6 +523,14 @@ export class GameManager extends Component {
   }
 
   onCheckComplete() {
+    if (DataManager.instance.level == levels.length) {
+      const block = this.gameCompleteNode.getChildByName("block");
+      block.getChildByName("Label").getComponent(Label).string =
+        "Congratulation";
+      const nextBtn = block.getChildByName("Next");
+      nextBtn.getChildByName("Label").getComponent(Label).string = "Restart";
+    }
+
     this.gameCompleteNode.active = true;
 
     PLAY_AUDIO.emit(GAME_EVENT_ENUM.PLAY_AUDIO, AUDIO_EFFECT_ENUM.WIN);
